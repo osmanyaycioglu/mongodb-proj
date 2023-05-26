@@ -1,0 +1,493 @@
+{
+    "name": "osman"
+}
+
+{
+    "age": { $gt : 50
+    }
+}
+
+{
+    "age": { $gte : 50
+    }
+}
+
+{
+    "age": { $lt : 50
+    }
+}
+
+{
+    "age": { $lte : 50
+    }
+}
+
+{
+    "age": { $eq : 50
+    }
+}
+
+{
+    "age": 50
+}
+
+{
+    "age": { $ne : 53
+    }
+}
+
+{
+     $and : [
+        {
+            "age": { $gt: 33
+            }
+        },
+        {
+            "age": { $lt : 50
+            }
+        },
+        {
+            name: "osman"
+        }
+    ]
+}
+
+
+{
+    "age": {
+        $in : [
+            33,
+            35
+        ]
+    }
+}
+
+{
+    "ratings.mndb": {$gte: 8
+    },
+    "ratings.votes": {$gte: 10000
+    }
+}
+
+{
+    "variations": {$elemMatch: {variation: "Violet",quantity: {$gte: 30
+            }
+        }
+    }
+},
+{$set: {
+        "variations.$.quantity": 35,
+        "variations.$.deneme": 100
+    }
+}
+
+
+
+{$push: { variations: {$each : [
+                { variation: 'Yellow', quantity: 12
+                },
+                {variation: 'Brown', quantity: 15
+                }
+            ],$sort: 1
+        }
+    }
+}
+
+
+[
+    {$match: {_id : "737516871-7"
+        }
+    },
+    {$unwind: "$variations"
+    },
+    {$addFields: {
+        myvars: "$variations",
+        total: {
+            $round : [
+                    {$sum : [
+                            "$year",
+                            "$price"
+                        ]
+                    },
+                    1
+                ]
+            }
+        }
+    },
+    {
+        $project : {name: 1,model: 1,myvars: 1,total: 1
+        }
+    }
+]
+
+[
+    {$match: {name: "Ford"
+        }
+    },
+    {$unwind: "$variations"
+    },
+    { $group: {
+        _id: "$variations.variation",
+        elem_count: {$sum : 1
+            },
+        avg_price: {
+            $avg : "$price"
+            }
+        }
+    },
+    {
+        $project : {avg_p: {$round : [
+                    "$avg_price",
+                    2
+                ]
+            }, elem_count: 1,cars: 1
+        }
+    }
+]
+
+[
+    {
+        $group: {
+            _id : "$year",
+            elem_count: {$sum : 1
+            },
+            avg_price: {
+                $avg : "$price"
+            },
+            cars: {
+                $push: { name: "$name", model: "$model", year: "$year"
+                }
+            }
+        }
+    }
+]
+
+[
+    { $bucket : {
+            groupBy: "$year",
+            boundaries: [
+                1970,
+                1990,
+                2000,
+                2010,
+                2020
+            ],
+            default: "diğer",
+            output : {
+                elem_count: {$sum : 1
+                },
+                avg_price: {
+                    $avg : "$price"
+                }
+            }
+        }
+    }
+]
+
+[
+    { $bucket : {
+            groupBy: "$year",
+            boundaries: [
+                1800,
+                1900,
+                1950,
+                1970,
+                1990,
+                2000,
+                2010,
+                2020
+            ],
+            default: "diğer",
+            output : {
+                elem_count: {$sum : 1
+                },
+                avg_price: {
+                    $avg : "$price"
+                },
+                cars: {
+                    $push: { name: "$name", model: "$model", year: "$year"
+                    }
+                }
+            }
+        }
+    }
+]
+
+[
+    { $bucketAuto : {
+            groupBy: "$year",
+            buckets: 5,
+            output : {
+                elem_count: {$sum : 1
+                },
+                avg_price: {
+                    $avg : "$price"
+                }
+            },
+            granularity: "E24"
+        }
+    }
+]
+
+[
+    {
+        $lookup : {
+            from: "orders",
+            localField: "_id",
+            foreignField : "car_id",
+            as: "sipariş"
+        }
+    },
+    {
+        $limit: 10
+    },
+    {
+        $sort: {name: 1
+        }
+    }
+]
+
+[
+    {
+        $lookup : {
+            from: "orders",
+            localField: "_id",
+            foreignField : "car_id",
+            as: "ors"
+        }
+    },
+    {
+        $unwind : "$ors"
+    },
+    {
+        $group: {
+            _id : "$source",
+            elem_count: {$sum : 1
+            },
+            avg_price: {
+                $avg : "$ors.price"
+            }
+        }
+    },
+    {
+        $project: {avg_p: {$round : [
+                    "$avg_price",
+                    2
+                ]
+            }, elem_count: 1
+        }
+    },
+    {
+        $match: {
+            elem_count : {$gt:5}
+        }
+    },
+    {
+        $out : {
+            coll: "new_report"
+        }
+    }
+]
+
+[
+    {
+        $lookup : {
+            from: "car",
+            localField: "car_id",
+            foreignField : "_id",
+            as: "arabalar"
+        }
+    }
+]
+
+[
+    {
+        $lookup : {
+            from: "orders",
+            localField: "_id",
+            foreignField : "car_id",
+            as: "ors"
+        }
+    },
+    {
+        $unwind : "$ors"
+    },
+    {
+        $group: {
+            _id : "$source",
+            elem_count: {$sum : 1
+            },
+            avg_price: {
+                $avg : "$ors.price"
+            }
+        }
+    },
+    {
+        $project: {avg_p: {$round : [
+                    "$avg_price",
+                    2
+                ]
+            }, elem_count: 1
+        }
+    },
+    {
+        $match: {
+            elem_count : {$gt:5}
+        }
+    },
+    {
+        $out : {
+            db: "etiya"
+            coll: "new_report"
+        }
+    }
+]
+
+[
+    {
+        $lookup : {
+            from: "orders",
+            localField: "_id",
+            foreignField : "car_id",
+            as: "ors"
+        }
+    },
+    {
+        $unwind : "$ors"
+    },
+    {
+        $group: {
+            _id : "$source",
+            elem_count: {$sum : 1
+            },
+            avg_price: {
+                $avg : "$ors.price"
+            }
+        }
+    },
+    {
+        $project: {avg_p: {$round : [
+                    "$avg_price",
+                    2
+                ]
+            }, elem_count: 1
+        }
+    },
+    {
+        $match: {
+            elem_count : {$gt:5}
+        }
+    },
+    {
+        $merge : {
+            into: {
+                db: "etiya",
+                coll: "new_report"
+            },
+            on: "_id",
+            whenMatched :"keepExisting",
+            whenNotMatched:"insert"
+        }
+    }
+]
+
+[
+    {
+        $project: {
+            title:1,
+            director:1,
+            actorsnew: {
+                $function : {
+                    body : function(actors) {
+                        if (actors == null) {
+                            return null;
+                        } else {
+                            return actors.sort();
+                        }
+                    },
+                    args: ["$actors"],
+                    lang: "js"
+                }
+            }
+        }
+    }
+]
+
+db.movies.aggregate(
+    [
+        {
+            $project: {
+                ryear: { $year: "$release_year" },
+                title: 1,
+                gross: 1,
+                suc: {
+                    $cond: {
+                        if: { $gt: ["$gross", 100000000] },
+                        then: "success",
+                        else: "failed"
+                    }
+                }
+            }
+        }
+    ]
+)
+
+db.movies.aggregate(
+    [
+        {
+            $project: {
+                title: 1,
+                gross: 1,
+                runtime_min: 1,
+                level: {
+                    $switch: {
+                        branches: [
+                            { case: { $gt: ["$runtime_min", 120] }, then: "uzun metraj" },
+                            { case: { $gt: ["$runtime_min", 70] }, then: "orta-uzun metraj" },
+                            { case: { $gt: ["$runtime_min", 50] }, then: "orta metraj" }
+                        ], default: "Kısa metraj"
+                    }
+                }
+            }
+        }
+    ]
+)
+
+db.createCollection("customer", {
+    validator: {
+        $jsonSchema: {
+            bsonType: "object",
+            required: ["firstName", "lastName", "birthdate", "country", "username", "password"],
+            properties: {
+                firstName: {
+                    bsonType: "string"
+                },
+                lastName: {
+                    bsonType: "string"
+                },
+                birthdate: {
+                    bsonType: "date"
+                },
+                country: {
+                    bsonType: "string"
+                },
+                username: {
+                    bsonType: "string"
+                },
+                password: {
+                    bsonType: "string",
+                    pattern: "^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d]{8,}$"
+                },
+                gender: {
+                    enum: ["MALE", "FEMALE"]
+                },
+                credit: {
+                    bsonType: "double"
+                },
+                amount: {
+                    bsonType: "long"
+                }
+            }
+        }
+    }
+}
